@@ -1,3 +1,5 @@
+include("../src/PiecewiseLinearOpt.jl")
+
 using Cbc
 using Gurobi
 using Test
@@ -14,7 +16,7 @@ import JuMP
 import MathOptInterface
 const MOI = MathOptInterface
 
-using PiecewiseLinearOpt
+using .PiecewiseLinearOpt
 
 # TODO: Add :SOS2 to this list, once Cbc supports it
 methods_1D = (:CC,:MC,:Logarithmic,:LogarithmicIB,:ZigZag,:ZigZagInteger,:GeneralizedCelaya,:SymmetricCelaya,:Incremental,:DisaggLogarithmic)
@@ -25,7 +27,7 @@ patterns_2D = (:Upper,:Lower,:BestFit,:UnionJack,:K1,:Random) # :OptimalTriangle
 
 println("\nunivariate tests")
 @testset "1D: $method" for method in methods_1D
-    model = JuMP.Model(JuMP.with_optimizer(Gurobi.Optimizer))
+    model = JuMP.Model(JuMP.with_optimizer(Cbc.Optimizer, logLevel=1))
     JuMP.@variable(model, x)
     z = piecewiselinear(model, x, range(1,stop=2π, length=8), sin, method=method)
     JuMP.@objective(model, Max, z)
@@ -49,7 +51,7 @@ end
 
 println("\nbivariate tests")
 @testset "2D: $method, $pattern" for method in methods_2D, pattern in patterns_2D
-    model = JuMP.Model(JuMP.with_optimizer(Gurobi.Optimizer))
+    model = JuMP.Model(JuMP.with_optimizer(Cbc.Optimizer, logLevel=1))
     JuMP.@variable(model, x[1:2])
     d = range(0,stop=1,length=8)
     f = (x1,x2) -> 2*(x1-1/3)^2 + 3*(x2-4/7)^4
